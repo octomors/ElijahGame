@@ -1,9 +1,5 @@
 using UnityEngine;
 
-/// <summary>
-/// Вешается на объект котла в сцене.
-/// Реализует IInteractable — PlayerInteractor автоматически его обнаружит.
-/// </summary>
 public class CampfireInteractable : MonoBehaviour, IInteractable
 {
     public CookingCameraController cameraController;

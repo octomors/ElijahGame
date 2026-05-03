@@ -68,20 +68,31 @@ public class CookingUIManager : MonoBehaviour
 
     private bool _isCooking = false;
     private bool _fireEverLit = false;
+    private bool _initialized = false; //защита от повторной инициализации
 
     private void Start()
     {
-        UpdateIngredientUI();
+        Initialize();
+        gameObject.SetActive(false);
+    }
+
+    // Инициализация — вызывается один раз
+    private void Initialize()
+    {
+        if (_initialized) return;
+        _initialized = true;
+
         PopulateRecipeBook();
-        
-        cookButton.onClick.AddListener(OnCookButtonClicked);
-        
+
+        if (cookButton != null)
+            cookButton.onClick.AddListener(OnCookButtonClicked);
+
         if (clearPotButton != null)
             clearPotButton.onClick.AddListener(ClearPot);
-        
+
         if (resultCloseButton != null)
             resultCloseButton.onClick.AddListener(HideResultPanel);
-            
+
         if (detailsCloseButton != null)
             detailsCloseButton.onClick.AddListener(HideRecipeDetails);
 
@@ -90,40 +101,48 @@ public class CookingUIManager : MonoBehaviour
 
         if (detailsCookButton != null)
             detailsCookButton.onClick.AddListener(OnCookFromDetails);
-        
+
         if (InventoryManager.Instance != null)
         {
             InventoryManager.Instance.OnInventoryChanged += UpdateIngredientUI;
             InventoryManager.Instance.OnInventoryChanged += UpdateAllRecipesAvailability;
         }
-        
+
         if (resultPanel != null)
             resultPanel.SetActive(false);
 
         if (recipeDetailsPanel != null)
             recipeDetailsPanel.SetActive(false);
-        
+
         if (exitCookingButton != null)
             exitCookingButton.onClick.AddListener(CloseCookingScreen);
-        
-        gameObject.SetActive(false);
     }
 
     // Обновление ингредиентов
     public void UpdateIngredientUI()
     {
-        foreach (Transform child in ingredientsContent) 
+        if (ingredientsContent == null || ingredientPrefab == null) return;
+
+        if (InventoryManager.Instance == null) return;
+
+        foreach (Transform child in ingredientsContent)
             Destroy(child.gameObject);
         ingredientUIMap.Clear();
 
         foreach (var item in InventoryManager.Instance.ingredients)
         {
             if (item.Value <= 0) continue;
-            
+
             GameObject obj = Instantiate(ingredientPrefab, ingredientsContent);
             IngredientUI ui = obj.GetComponent<IngredientUI>();
+
+            if (ui == null)
+            {
+                Debug.LogError($"[CookingUI] Prefab '{ingredientPrefab.name}' не содержит компонент IngredientUI! Проверь префаб.");
+                continue;
+            }
+
             ui.Setup(item.Key, item.Value);
-            
             ingredientUIMap[item.Key] = ui;
             ui.OnClicked += (clickedUI) => AddIngredientToPot(clickedUI.Ingredient);
         }
@@ -623,11 +642,14 @@ public class CookingUIManager : MonoBehaviour
     // Открывает экран готовки. Вызывается из CampfireInteractable после перехода камеры
     public void OpenCookingScreen()
     {
+        // На случай если объект был неактивен при старте
+        Initialize();
+
         gameObject.SetActive(true);
 
         if (cookingScreenCanvasGroup != null)
             cookingScreenCanvasGroup.alpha = 1f;
-        
+
         ClearPot();
         UpdateIngredientUI();
         PopulateRecipeBook();

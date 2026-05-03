@@ -2,9 +2,7 @@ using System;
 using System.Collections;
 using UnityEngine;
 
-/// <summary>
-/// Управляет переходом между FPS-камерой и фиксированной камерой готовки.
-/// </summary>
+// Управляет переходом между камерой от первого лица игрока и фиксированной камерой готовки.
 public class CookingCameraController : MonoBehaviour
 {
     [Header("Камера готовки")]
